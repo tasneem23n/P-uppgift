@@ -6,21 +6,41 @@ from tkinter import messagebox, simpledialog
 # ============================
 
 class Contact:
-    # This class represents ONE contact (name, phone, info)
-    def __init__(self, name, phone, info):
-        # strip() removes extra spaces
-        self.name = name.strip()
+    """
+    Represents a contact in the phonebook.
+
+    Input:
+        first_name (str)
+        last_name (str)
+        phone (str)
+        email (str)
+        address (str)
+
+    Output:
+        Contact object with cleaned fields
+    """
+
+    def __init__(self, first_name, last_name, phone, email, address):
+        self.first_name = first_name.strip()
+        self.last_name = last_name.strip()
         self.phone = phone.strip()
-        self.info = info.strip()
+        self.email = email.strip()
+        self.address = address.strip()
 
-    # Used when searching for a name
     def matches(self, search_term):
-        # Case-insensitive search
-        return search_term.lower() in self.name.lower()
+        """
+        Input: search_term (str)
+        Output: True if search term matches first or last name
+        """
+        s = search_term.lower()
+        return s in self.first_name.lower() or s in self.last_name.lower()
 
-    # Format used when saving to file
     def to_file_format(self):
-        return f"{self.name};{self.phone};{self.info}"
+        """
+        Output: A single line string for saving to file
+        Format: first;last;phone;email;address
+        """
+        return f"{self.first_name};{self.last_name};{self.phone};{self.email};{self.address}"
 
 
 # ============================
@@ -28,24 +48,27 @@ class Contact:
 # ============================
 
 def read_contacts_from_file(file_name):
-    # Reads contacts from a text file and returns a list of Contact objects
+    """
+    Input: file_name (str)
+    Output: list of Contact objects
+    """
     contacts = []
     try:
         with open(file_name, "r", encoding="utf-8") as f:
             for line in f:
-                # Remove newline and split by ;
                 parts = line.strip().split(";")
-                if len(parts) == 3:
-                    # Create a Contact object from the line
+                if len(parts) == 5:
                     contacts.append(Contact(*parts))
     except FileNotFoundError:
-        # If file doesn't exist, start with empty list
         print("No contact file found. Starting empty.")
     return contacts
 
 
 def write_contacts_to_file(contacts, file_name):
-    # Saves all contacts to a file
+    """
+    Input: list of Contact objects, file_name (str)
+    Output: writes all contacts to file
+    """
     with open(file_name, "w", encoding="utf-8") as f:
         for c in contacts:
             f.write(c.to_file_format() + "\n")
@@ -56,127 +79,141 @@ def write_contacts_to_file(contacts, file_name):
 # ============================
 
 class PhonebookGUI:
-    # This class creates the entire GUI window and handles all button actions
+    """
+    Creates the GUI and handles all user interactions.
+    """
+
     def __init__(self, root):
         self.root = root
-        self.root.title("Phonebook GUI")  # Window title
-        self.root.geometry("550x420")     # Window size
-        self.root.configure(bg="#eef3ff") # Background color
+        self.root.title("Phonebook GUI")
+        self.root.geometry("650x450")
+        self.root.configure(bg="#eef3ff")
 
-        self.FILE = "contacts.txt"        # File where contacts are stored
+        self.FILE = "contacts.txt"
         self.contacts = read_contacts_from_file(self.FILE)
 
-        # ----------------------------
-        # Listbox (shows all contacts)
-        # ----------------------------
-        self.listbox = tk.Listbox(root, width=60, height=15)
+        # Listbox to display contacts
+        self.listbox = tk.Listbox(root, width=80, height=15)
         self.listbox.pack(pady=10)
 
-        # ----------------------------
-        # Buttons (Add, Update, etc.)
-        # ----------------------------
+        # Buttons
         frame = tk.Frame(root, bg="#eef3ff")
         frame.pack()
 
-        # Each button calls a function when clicked
         tk.Button(frame, text="Add", width=12, command=self.add_contact).grid(row=0, column=0, padx=5)
         tk.Button(frame, text="Update", width=12, command=self.update_contact).grid(row=0, column=1, padx=5)
         tk.Button(frame, text="Remove", width=12, command=self.remove_contact).grid(row=0, column=2, padx=5)
         tk.Button(frame, text="Search", width=12, command=self.search_contact).grid(row=0, column=3, padx=5)
         tk.Button(frame, text="Show All", width=12, command=self.load_contacts).grid(row=0, column=4, padx=5)
 
-        # Load contacts into the listbox when the program starts
         self.load_contacts()
 
-    # ----------------------------
-    # Load all contacts into listbox
-    # ----------------------------
     def load_contacts(self):
-        self.listbox.delete(0, tk.END)  # Clear listbox
-        # Sort contacts alphabetically by name
-        for c in sorted(self.contacts, key=lambda x: x.name.lower()):
-            self.listbox.insert(tk.END, f"{c.name} ({c.phone}) – {c.info}")
+        """
+        Loads all contacts into the listbox.
+        Input: none
+        Output: updates listbox
+        """
+        self.listbox.delete(0, tk.END)
+        for c in sorted(self.contacts, key=lambda x: (x.last_name.lower(), x.first_name.lower())):
+            self.listbox.insert(
+                tk.END,
+                f"{c.first_name} {c.last_name} | {c.phone} | {c.email} | {c.address}"
+            )
 
-    # ----------------------------
-    # Add a new contact
-    # ----------------------------
     def add_contact(self):
-        # Ask user for contact details
-        name = simpledialog.askstring("Name", "Enter name:")
-        if not name:
-            return
-        phone = simpledialog.askstring("Phone", "Enter phone:")
-        if not phone:
-            return
-        info = simpledialog.askstring("Info", "Extra info:") or ""
+        """
+        Adds a new contact.
+        Input: user dialog boxes
+        Output: new contact saved to file
+        """
+        first = simpledialog.askstring("First name", "Enter first name:")
+        if not first: return
 
-        # Add to list
-        self.contacts.append(Contact(name, phone, info))
+        last = simpledialog.askstring("Last name", "Enter last name:")
+        if not last: return
+
+        phone = simpledialog.askstring("Phone", "Enter phone number:")
+        if not phone: return
+
+        email = simpledialog.askstring("Email", "Enter email:") or ""
+        address = simpledialog.askstring("Address", "Enter address:") or ""
+
+        self.contacts.append(Contact(first, last, phone, email, address))
         write_contacts_to_file(self.contacts, self.FILE)
         self.load_contacts()
 
-    # ----------------------------
-    # Update selected contact
-    # ----------------------------
     def update_contact(self):
-        index = self.listbox.curselection()  # Get selected item
-        if not index:
-            messagebox.showwarning("Error", "Select a contact first.")
-            return
-
-        contact = self.contacts[index[0]]
-
-        # Ask user for new values (pre-filled with old values)
-        new_name = simpledialog.askstring("New name", "Enter new name:", initialvalue=contact.name)
-        if not new_name:
-            return
-        new_phone = simpledialog.askstring("New phone", "Enter new phone:", initialvalue=contact.phone)
-        if not new_phone:
-            return
-        new_info = simpledialog.askstring("New info", "Enter new info:", initialvalue=contact.info) or ""
-
-        # Update contact
-        contact.name = new_name
-        contact.phone = new_phone
-        contact.info = new_info
-
-        write_contacts_to_file(self.contacts, self.FILE)
-        self.load_contacts()
-
-    # ----------------------------
-    # Remove selected contact
-    # ----------------------------
-    def remove_contact(self):
+        """
+        Updates selected contact.
+        Input: selected listbox item + user dialogs
+        Output: updated contact saved to file
+        """
         index = self.listbox.curselection()
         if not index:
             messagebox.showwarning("Error", "Select a contact first.")
             return
 
-        contact = self.contacts[index[0]]
+        c = self.contacts[index[0]]
 
-        # Confirm deletion
-        if messagebox.askyesno("Confirm", f"Remove {contact.name}?"):
-            self.contacts.remove(contact)
+        new_first = simpledialog.askstring("First name", "Enter new first name:", initialvalue=c.first_name)
+        if not new_first: return
+
+        new_last = simpledialog.askstring("Last name", "Enter new last name:", initialvalue=c.last_name)
+        if not new_last: return
+
+        new_phone = simpledialog.askstring("Phone", "Enter new phone:", initialvalue=c.phone)
+        if not new_phone: return
+
+        new_email = simpledialog.askstring("Email", "Enter new email:", initialvalue=c.email) or ""
+        new_address = simpledialog.askstring("Address", "Enter new address:", initialvalue=c.address) or ""
+
+        c.first_name = new_first
+        c.last_name = new_last
+        c.phone = new_phone
+        c.email = new_email
+        c.address = new_address
+
+        write_contacts_to_file(self.contacts, self.FILE)
+        self.load_contacts()
+
+    def remove_contact(self):
+        """
+        Removes selected contact.
+        Input: selected listbox item
+        Output: contact removed from file
+        """
+        index = self.listbox.curselection()
+        if not index:
+            messagebox.showwarning("Error", "Select a contact first.")
+            return
+
+        c = self.contacts[index[0]]
+
+        if messagebox.askyesno("Confirm", f"Remove {c.first_name} {c.last_name}?"):
+            self.contacts.remove(c)
             write_contacts_to_file(self.contacts, self.FILE)
             self.load_contacts()
 
-    # ----------------------------
-    # Search for a contact
-    # ----------------------------
     def search_contact(self):
+        """
+        Searches for contacts by first or last name.
+        Input: search term from user
+        Output: popup with results
+        """
         term = simpledialog.askstring("Search", "Enter name:")
-        if not term:
-            return
+        if not term: return
 
-        # Find all matching contacts
         matches = [c for c in self.contacts if c.matches(term)]
 
         if not matches:
             messagebox.showinfo("Search result", "No contacts found.")
             return
 
-        # Show results in a popup
-        result = "\n".join(f"{c.name} ({c.phone}) – {c.info}" for c in matches)
+        result = "\n".join(
+            f"{c.first_name} {c.last_name} | {c.phone} | {c.email} | {c.address}"
+            for c in matches
+        )
         messagebox.showinfo("Search result", result)
 
 
@@ -185,6 +222,6 @@ class PhonebookGUI:
 # ============================
 
 if __name__ == "__main__":
-    root = tk.Tk()          # Create main window
-    app = PhonebookGUI(root) # Create GUI app
-    root.mainloop()         # Start GUI loop (keeps window open)
+    root = tk.Tk()
+    app = PhonebookGUI(root)
+    root.mainloop()
