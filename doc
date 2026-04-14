@@ -1,36 +1,43 @@
-from colorama import init, Fore, Style
-
-# Initiera färger (behövs för Windows)
-init(autoreset=True)
-
-
 # ============================
 #   CLASS: Contact
 # ============================
 
 class Contact:
     """
-    Representerar en kontakt i telefonregistret.
-    name: namn på kontakten
-    phone: telefonnummer
-    info: extra information
+    Represents a contact in the phonebook.
+
+    Input:
+        first_name (str)
+        last_name (str)
+        phone (str)
+        email (str)
+        address (str)
+
+    Output:
+        Contact object with cleaned fields
     """
 
-    def __init__(self, name, phone, info):
-        self.name = name.strip()
+    def __init__(self, first_name, last_name, phone, email, address):
+        self.first_name = first_name.strip()
+        self.last_name = last_name.strip()
         self.phone = phone.strip()
-        self.info = info.strip()
-
-    def __str__(self):
-        return f"Name: {self.name}, Phone: {self.phone}, Info: {self.info}"
+        self.email = email.strip()
+        self.address = address.strip()
 
     def matches(self, search_term):
-        """Returnerar True om söksträngen finns i namnet (case-insensitive)."""
-        return search_term.lower() in self.name.lower()
+        """
+        Input: search_term (str)
+        Output: True if search term matches first or last name
+        """
+        s = search_term.lower()
+        return s in self.first_name.lower() or s in self.last_name.lower()
 
     def to_file_format(self):
-        """Returnerar sträng i formatet: namn;telefon;info"""
-        return f"{self.name};{self.phone};{self.info}"
+        """
+        Output: A single line string for saving to file
+        Format: first;last;phone;email;address
+        """
+        return f"{self.first_name};{self.last_name};{self.phone};{self.email};{self.address}"
 
 
 # ============================
@@ -39,205 +46,127 @@ class Contact:
 
 def read_contacts_from_file(file_name):
     """
-    Läser in kontakter från fil.
-    Varje rad: namn;telefon;info
+    Input: file_name (str)
+    Output: list of Contact objects
     """
     contacts = []
     try:
         with open(file_name, "r", encoding="utf-8") as f:
             for line in f:
-                line = line.strip()
-                if not line:
-                    continue
-                parts = line.split(";")
-                if len(parts) != 3:
-                    print(Fore.YELLOW + f"Warning: Skipping malformed line: {line}")
-                    continue
-                name, phone, info = parts
-                contacts.append(Contact(name, phone, info))
+                parts = line.strip().split(";")
+                if len(parts) == 5:
+                    contacts.append(Contact(*parts))
     except FileNotFoundError:
-        print(Fore.YELLOW + "Info: No existing contact file found. Starting with empty list.")
+        print("Ingen kontaktfil hittades. Börjar med tom lista.")
     return contacts
 
 
 def write_contacts_to_file(contacts, file_name):
-    """Skriver alla kontakter till fil."""
-    try:
-        with open(file_name, "w", encoding="utf-8") as f:
-            for c in contacts:
-                f.write(c.to_file_format() + "\n")
-    except OSError as e:
-        print(Fore.RED + f"Error writing to file: {e}")
-
-
-# ============================
-#   INPUT HELPERS
-# ============================
-
-def get_int_input(prompt_string, min_value=None, max_value=None):
     """
-    Läser in ett heltal med felhantering.
-    Kan begränsas med min_value och max_value.
+    Input: contacts (list of Contact), file_name (str)
+    Output: writes all contacts to file
     """
-    while True:
-        user_input = input(prompt_string)
-        try:
-            value = int(user_input)
-            if min_value is not None and value < min_value:
-                print(Fore.RED + f"Value must be >= {min_value}.")
-                continue
-            if max_value is not None and value > max_value:
-                print(Fore.RED + f"Value must be <= {max_value}.")
-                continue
-            return value
-        except ValueError:
-            print(Fore.RED + "Invalid input. Please enter a number.")
-
-
-def get_non_empty_input(prompt_string):
-    """Tvingar användaren att skriva något (ej tom sträng)."""
-    while True:
-        value = input(prompt_string).strip()
-        if value:
-            return value
-        print(Fore.RED + "Input cannot be empty.")
+    with open(file_name, "w", encoding="utf-8") as f:
+        for c in contacts:
+            f.write(c.to_file_format() + "\n")
 
 
 # ============================
-#   MENU
-# ============================
-
-def menu():
-    print(Style.BRIGHT + "\nWhat would you like to do?")
-    print("1 - Add new contact")
-    print("2 - Search contact")
-    print("3 - Update contact")
-    print("4 - Remove contact")
-    print("5 - Show all contacts")
-    print("6 - Exit")
-
-
-def menu_choice():
-    return get_int_input("Enter choice: ", min_value=1, max_value=6)
-
-
-# ============================
-#   CONTACT OPERATIONS
+#   PHONEBOOK FUNCTIONS
 # ============================
 
 def add_contact(contacts):
-    print(Style.BRIGHT + "\nAdd new contact")
-    name = get_non_empty_input("Name: ")
-    phone = get_non_empty_input("Phone: ")
-    info = input("Info (optional): ")
+    """
+    Input: user input from terminal
+    Output: new contact added to list
+    """
+    print("\n--- Lägg till kontakt ---")
+    first = input("Förnamn: ")
+    last = input("Efternamn: ")
+    phone = input("Mobilnummer: ")
+    email = input("E-post: ")
+    address = input("Adress: ")
 
-    contacts.append(Contact(name, phone, info))
-    return Fore.GREEN + "Contact added."
+    contacts.append(Contact(first, last, phone, email, address))
+    print("Kontakt tillagd!")
+
+
+def show_contacts(contacts):
+    """
+    Input: contacts list
+    Output: prints all contacts
+    """
+    print("\n--- Alla kontakter ---")
+    if not contacts:
+        print("Inga kontakter sparade.")
+        return
+
+    for c in contacts:
+        print(f"{c.first_name} {c.last_name} | {c.phone} | {c.email} | {c.address}")
 
 
 def search_contact(contacts):
-    print(Style.BRIGHT + "\nSearch contact")
-    if not contacts:
-        print(Fore.YELLOW + "No contacts in the register.")
-        return []
-
-    term = get_non_empty_input("Search name: ")
+    """
+    Input: search term from user
+    Output: prints matching contacts
+    """
+    term = input("\nSök efter namn: ")
     matches = [c for c in contacts if c.matches(term)]
 
     if not matches:
-        print(Fore.YELLOW + "No contacts found.")
-    else:
-        print(Fore.CYAN + f"\nFound {len(matches)} contact(s):")
-        for i, c in enumerate(matches, start=1):
-            print(f"{i}. {c}")
+        print("Inga kontakter hittades.")
+        return
 
-    return matches
-
-
-def choose_from_matches(matches, action_name):
-    """
-    Låter användaren välja en kontakt från en lista med träffar.
-    Returnerar vald kontakt eller None.
-    """
-    if not matches:
-        return None
-
-    if len(matches) == 1:
-        return matches[0]
-
-    print(Style.BRIGHT + f"\nWhich contact do you want to {action_name}?")
-    for i, c in enumerate(matches, start=1):
-        print(f"{i}. {c}")
-
-    index = get_int_input("Choose number: ", min_value=1, max_value=len(matches)) - 1
-    return matches[index]
-
-
-def update_contact(contacts):
-    print(Style.BRIGHT + "\nUpdate contact")
-    if not contacts:
-        return Fore.YELLOW + "No contacts to update."
-
-    matches = search_contact(contacts)
-    contact = choose_from_matches(matches, "update")
-    if contact is None:
-        return Fore.YELLOW + "No contact updated."
-
-    print("Leave field empty to keep old value.")
-    new_name = input(f"New name ({contact.name}): ").strip() or contact.name
-    new_phone = input(f"New phone ({contact.phone}): ").strip() or contact.phone
-    new_info = input(f"New info ({contact.info}): ").strip() or contact.info
-
-    contact.name = new_name
-    contact.phone = new_phone
-    contact.info = new_info
-
-    return Fore.GREEN + "Contact updated."
+    print("\n--- Sökresultat ---")
+    for c in matches:
+        print(f"{c.first_name} {c.last_name} | {c.phone} | {c.email} | {c.address}")
 
 
 def remove_contact(contacts):
-    print(Style.BRIGHT + "\nRemove contact")
-    if not contacts:
-        return Fore.YELLOW + "No contacts to remove."
+    """
+    Input: name from user
+    Output: removes matching contact
+    """
+    term = input("\nAnge namn på kontakt att ta bort: ")
+    for c in contacts:
+        if c.matches(term):
+            contacts.remove(c)
+            print("Kontakt borttagen.")
+            return
+    print("Ingen kontakt hittades.")
 
-    matches = search_contact(contacts)
-    contact = choose_from_matches(matches, "remove")
-    if contact is None:
-        return Fore.YELLOW + "No contact removed."
 
-    contacts.remove(contact)
-    return Fore.GREEN + "Contact removed."
+def update_contact(contacts):
+    """
+    Input: name from user + new values
+    Output: updates selected contact
+    """
+    term = input("\nAnge namn på kontakt att uppdatera: ")
 
+    for c in contacts:
+        if c.matches(term):
+            print("Lämna tomt för att behålla gamla värdet.")
 
-def show_all(contacts):
-    print(Style.BRIGHT + "\nAll contacts")
-    if not contacts:
-        print(Fore.YELLOW + "No contacts in the register.")
-        return
+            new_first = input(f"Förnamn ({c.first_name}): ") or c.first_name
+            new_last = input(f"Efternamn ({c.last_name}): ") or c.last_name
+            new_phone = input(f"Mobilnummer ({c.phone}): ") or c.phone
+            new_email = input(f"E-post ({c.email}): ") or c.email
+            new_address = input(f"Adress ({c.address}): ") or c.address
 
-    for c in sorted(contacts, key=lambda x: x.name.lower()):
-        print(c)
+            c.first_name = new_first
+            c.last_name = new_last
+            c.phone = new_phone
+            c.email = new_email
+            c.address = new_address
+
+            print("Kontakt uppdaterad!")
+            return
+
+    print("Ingen kontakt hittades.")
 
 
 # ============================
-#   EXECUTE MENU CHOICE
-# ============================
-
-def execute(choice, contacts):
-    if choice == 1:
-        print(add_contact(contacts))
-    elif choice == 2:
-        search_contact(contacts)
-    elif choice == 3:
-        print(update_contact(contacts))
-    elif choice == 4:
-        print(remove_contact(contacts))
-    elif choice == 5:
-        show_all(contacts)
-
-
-# ============================
-#   MAIN PROGRAM
+#   MAIN MENU
 # ============================
 
 def main():
@@ -245,15 +174,32 @@ def main():
     contacts = read_contacts_from_file(FILE)
 
     while True:
-        menu()
-        choice = menu_choice()
+        print("\n===== TELEFONREGISTER =====")
+        print("1. Visa alla kontakter")
+        print("2. Lägg till kontakt")
+        print("3. Uppdatera kontakt")
+        print("4. Ta bort kontakt")
+        print("5. Sök kontakt")
+        print("6. Avsluta")
 
-        if choice == 6:
+        choice = input("Välj ett alternativ: ")
+
+        if choice == "1":
+            show_contacts(contacts)
+        elif choice == "2":
+            add_contact(contacts)
+        elif choice == "3":
+            update_contact(contacts)
+        elif choice == "4":
+            remove_contact(contacts)
+        elif choice == "5":
+            search_contact(contacts)
+        elif choice == "6":
             write_contacts_to_file(contacts, FILE)
-            print(Fore.GREEN + "Contacts saved. Goodbye!")
+            print("Programmet avslutas.")
             break
-
-        execute(choice, contacts)
+        else:
+            print("Ogiltigt val, försök igen.")
 
 
 if __name__ == "__main__":
