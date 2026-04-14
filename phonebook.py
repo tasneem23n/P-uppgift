@@ -14,7 +14,7 @@ class Contact:
         address (str)
 
     Output:
-        Contact object with cleaned fields
+        A Contact object with cleaned fields
     """
 
     def __init__(self, first_name, last_name, phone, email, address):
