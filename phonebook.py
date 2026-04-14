@@ -1,3 +1,5 @@
+import os
+
 # ============================
 #   CLASS: Contact
 # ============================
@@ -76,10 +78,6 @@ def write_contacts_to_file(contacts, file_name):
 # ============================
 
 def add_contact(contacts):
-    """
-    Input: user input from terminal
-    Output: new contact added to list
-    """
     print("\n--- Lägg till kontakt ---")
     first = input("Förnamn: ")
     last = input("Efternamn: ")
@@ -92,10 +90,6 @@ def add_contact(contacts):
 
 
 def show_contacts(contacts):
-    """
-    Input: contacts list
-    Output: prints all contacts
-    """
     print("\n--- Alla kontakter ---")
     if not contacts:
         print("Inga kontakter sparade.")
@@ -106,10 +100,6 @@ def show_contacts(contacts):
 
 
 def search_contact(contacts):
-    """
-    Input: search term from user
-    Output: prints matching contacts
-    """
     term = input("\nSök efter namn: ")
     matches = [c for c in contacts if c.matches(term)]
 
@@ -123,10 +113,6 @@ def search_contact(contacts):
 
 
 def remove_contact(contacts):
-    """
-    Input: name from user
-    Output: removes matching contact
-    """
     term = input("\nAnge namn på kontakt att ta bort: ")
     for c in contacts:
         if c.matches(term):
@@ -137,27 +123,17 @@ def remove_contact(contacts):
 
 
 def update_contact(contacts):
-    """
-    Input: name from user + new values
-    Output: updates selected contact
-    """
     term = input("\nAnge namn på kontakt att uppdatera: ")
 
     for c in contacts:
         if c.matches(term):
             print("Lämna tomt för att behålla gamla värdet.")
 
-            new_first = input(f"Förnamn ({c.first_name}): ") or c.first_name
-            new_last = input(f"Efternamn ({c.last_name}): ") or c.last_name
-            new_phone = input(f"Mobilnummer ({c.phone}): ") or c.phone
-            new_email = input(f"E-post ({c.email}): ") or c.email
-            new_address = input(f"Adress ({c.address}): ") or c.address
-
-            c.first_name = new_first
-            c.last_name = new_last
-            c.phone = new_phone
-            c.email = new_email
-            c.address = new_address
+            c.first_name = input(f"Förnamn ({c.first_name}): ") or c.first_name
+            c.last_name = input(f"Efternamn ({c.last_name}): ") or c.last_name
+            c.phone = input(f"Mobilnummer ({c.phone}): ") or c.phone
+            c.email = input(f"E-post ({c.email}): ") or c.email
+            c.address = input(f"Adress ({c.address}): ") or c.address
 
             print("Kontakt uppdaterad!")
             return
@@ -166,21 +142,65 @@ def update_contact(contacts):
 
 
 # ============================
+#   REGISTER HANDLING (B-NIVÅ)
+# ============================
+
+def choose_register():
+    """
+    Lets the user choose or create a register.
+    Output: filename (str)
+    """
+
+    print("\n===== REGISTERHANTERING =====")
+    print("1. Välj befintligt register")
+    print("2. Skapa nytt register")
+
+    choice = input("Val: ")
+
+    if choice == "1":
+        files = [f for f in os.listdir() if f.endswith(".txt")]
+        if not files:
+            print("Inga register hittades.")
+            return choose_register()
+
+        print("\nTillgängliga register:")
+        for i, f in enumerate(files):
+            print(f"{i+1}. {f}")
+
+        index = int(input("Välj register: ")) - 1
+        return files[index]
+
+    elif choice == "2":
+        name = input("Namn på nytt register (utan .txt): ")
+        filename = name + ".txt"
+        open(filename, "w").close()
+        print(f"Register '{filename}' skapat!")
+        return filename
+
+    else:
+        print("Ogiltigt val.")
+        return choose_register()
+
+
+# ============================
 #   MAIN MENU
 # ============================
 
 def main():
-    FILE = "contacts.txt"
-    contacts = read_contacts_from_file(FILE)
+    print("Välkommen till telefonregistret!")
+    file_name = choose_register()
+    contacts = read_contacts_from_file(file_name)
 
     while True:
         print("\n===== TELEFONREGISTER =====")
+        print(f"Aktiva registret: {file_name}")
         print("1. Visa alla kontakter")
         print("2. Lägg till kontakt")
         print("3. Uppdatera kontakt")
         print("4. Ta bort kontakt")
         print("5. Sök kontakt")
-        print("6. Avsluta")
+        print("6. Byt register (B-nivå)")
+        print("7. Avsluta")
 
         choice = input("Välj ett alternativ: ")
 
@@ -195,7 +215,11 @@ def main():
         elif choice == "5":
             search_contact(contacts)
         elif choice == "6":
-            write_contacts_to_file(contacts, FILE)
+            write_contacts_to_file(contacts, file_name)
+            file_name = choose_register()
+            contacts = read_contacts_from_file(file_name)
+        elif choice == "7":
+            write_contacts_to_file(contacts, file_name)
             print("Programmet avslutas.")
             break
         else:
