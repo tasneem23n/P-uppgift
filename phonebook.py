@@ -155,4 +155,4 @@ def choose_register():
     """
     print("\n===== REGISTERHANTERING =====")
     print("1. Välj befintligt register")
-    print("2. Sk
+    print("2. Skapa ett annat register") 
