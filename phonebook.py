@@ -1,51 +1,49 @@
-import os   # Importerar os-modulen för att kunna lista filer och hantera flera register
+import os   # Används för att lista filer och hantera registerfiler
 
-
-# ============================
-#   KLASS: Contact
-# ============================
+# ============================================================
+#   KLASS: Contact – representerar en kontakt i registret
+# ============================================================
 
 class Contact:
-    """
-    Representerar en kontakt i telefonregistret.
-    """
-
     def __init__(self, first_name, last_name, phone, email, address):
-        self.first_name = first_name.strip()   # Sparar förnamn utan extra mellanslag
-        self.last_name = last_name.strip()     # Sparar efternamn
-        self.phone = phone.strip()             # Sparar mobilnummer
-        self.email = email.strip()             # Sparar e-post
-        self.address = address.strip()         # Sparar adress
+        # Sparar alla fält och tar bort extra mellanslag
+        self.first_name = first_name.strip()
+        self.last_name = last_name.strip()
+        self.phone = phone.strip()
+        self.email = email.strip()
+        self.address = address.strip()
 
     def matches(self, search_term):
         """
         Returnerar True om söktermen matchar för- eller efternamn.
+        Sökningen är skiftlägesokänslig.
         """
         s = search_term.lower()
         return s in self.first_name.lower() or s in self.last_name.lower()
 
     def to_file_format(self):
         """
-        Returnerar en rad som kan sparas i en textfil.
+        Returnerar kontaktens data i ett format som kan sparas i fil.
         Format: förnamn;efternamn;telefon;email;adress
         """
         return f"{self.first_name};{self.last_name};{self.phone};{self.email};{self.address}"
 
 
-# ============================
-#   FILHANTERING
-# ============================
+# ============================================================
+#   FILHANTERING – läsa och skriva registerfiler
+# ============================================================
 
 def read_contacts_from_file(file_name):
     """
-    Läser in kontakter från en fil och returnerar en lista av Contact-objekt.
+    Läser in kontakter från en textfil och returnerar en lista av Contact-objekt.
+    Om filen inte finns skapas en tom lista.
     """
     contacts = []
     try:
         with open(file_name, "r", encoding="utf-8") as f:
             for line in f:
-                parts = line.strip().split(";")   # Delar upp raden vid ;
-                if len(parts) == 5:               # Kontrollerar att alla fält finns
+                parts = line.strip().split(";")  # Delar upp raden vid ;
+                if len(parts) == 5:              # Kontrollerar att alla fält finns
                     contacts.append(Contact(*parts))
     except FileNotFoundError:
         print("Ingen kontaktfil hittades. Börjar med tom lista.")
@@ -55,15 +53,16 @@ def read_contacts_from_file(file_name):
 def write_contacts_to_file(contacts, file_name):
     """
     Skriver alla kontakter till filen.
+    Varje kontakt sparas på en egen rad.
     """
     with open(file_name, "w", encoding="utf-8") as f:
         for c in contacts:
             f.write(c.to_file_format() + "\n")
 
 
-# ============================
-#   KONTAKTFUNKTIONER
-# ============================
+# ============================================================
+#   TERMINALFUNKTIONER – funktioner för användarens menyval
+# ============================================================
 
 def add_contact(contacts):
     """
@@ -112,6 +111,7 @@ def search_contact(contacts):
 def remove_contact(contacts):
     """
     Tar bort en kontakt baserat på namn.
+    Tar bort första matchande kontakt.
     """
     term = input("\nAnge namn på kontakt att ta bort: ")
     for c in contacts:
@@ -125,6 +125,7 @@ def remove_contact(contacts):
 def update_contact(contacts):
     """
     Uppdaterar en befintlig kontakt.
+    Tomt fält innebär att det gamla värdet behålls.
     """
     term = input("\nAnge namn på kontakt att uppdatera: ")
 
@@ -144,9 +145,9 @@ def update_contact(contacts):
     print("Ingen kontakt hittades.")
 
 
-# ============================
-#   REGISTERHANTERING (B-NIVÅ)
-# ============================
+# ============================================================
+#   REGISTERHANTERING – B-nivå
+# ============================================================
 
 def choose_register():
     """
@@ -185,20 +186,27 @@ def choose_register():
         return choose_register()
 
 
+# ============================================================
+#   MAIN – kör hela terminalprogrammet
+# ============================================================
+
 def main():
-    # Skriver ut en välkomsttext när programmet startar
+    """
+    Huvudfunktionen som kör hela programmet.
+    Hanterar meny, registerbyte och sparande.
+    """
     print("Välkommen till telefonregistret!")
 
-    # Låter användaren välja eller skapa ett register (fil)
+    # Låter användaren välja eller skapa ett register
     file_name = choose_register()
 
-    # Läser in alla kontakter från den valda filen
+    # Läser in alla kontakter från filen
     contacts = read_contacts_from_file(file_name)
 
-    # Startar huvudloopen (menyn körs om och om igen tills användaren avslutar)
+    # Huvudmeny-loop
     while True:
         print("\n===== TELEFONREGISTER =====")
-        print(f"Aktiva registret: {file_name}")  # Visar vilket register som används
+        print(f"Aktiva registret: {file_name}")
         print("1. Visa alla kontakter")
         print("2. Lägg till kontakt")
         print("3. Uppdatera kontakt")
@@ -207,10 +215,8 @@ def main():
         print("6. Byt register (B-nivå)")
         print("7. Avsluta")
 
-        # Användaren väljer ett menyval
         choice = input("Välj ett alternativ: ")
 
-        # Kör rätt funktion beroende på val
         if choice == "1":
             show_contacts(contacts)
         elif choice == "2":
@@ -222,24 +228,20 @@ def main():
         elif choice == "5":
             search_contact(contacts)
         elif choice == "6":
-            # Sparar nuvarande register innan byte
-            write_contacts_to_file(contacts, file_name)
-
-            # Låter användaren välja ett nytt register
-            file_name = choose_register()
-
-            # Läser in kontakter från det nya registret
+            write_contacts_to_file(contacts, file_name)  # Spara innan byte
+            file_name = choose_register()                # Välj nytt register
             contacts = read_contacts_from_file(file_name)
-
         elif choice == "7":
-            # Sparar innan programmet avslutas
-            write_contacts_to_file(contacts, file_name)
+            write_contacts_to_file(contacts, file_name)  # Spara innan avslut
             print("Programmet avslutas.")
-            break  # Avslutar loopen och programmet
-
+            break
         else:
             print("Ogiltigt val, försök igen.")
 
 
+# ============================================================
+#   STARTAR PROGRAMMET
+# ============================================================
+
 if __name__ == "__main__":
-    main()
+    main()   # Kör huvudprogrammet
