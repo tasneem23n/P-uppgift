@@ -155,4 +155,91 @@ def choose_register():
     """
     print("\n===== REGISTERHANTERING =====")
     print("1. Välj befintligt register")
-    print("2. Skapa ett annat register") 
+    print("2. Skapa nytt register")
+
+    choice = input("Val: ")
+
+    if choice == "1":
+        # Lista alla .txt-filer i mappen
+        files = [f for f in os.listdir() if f.endswith(".txt")]
+        if not files:
+            print("Inga register hittades.")
+            return choose_register()
+
+        print("\nTillgängliga register:")
+        for i, f in enumerate(files):
+            print(f"{i+1}. {f}")
+
+        index = int(input("Välj register: ")) - 1
+        return files[index]
+
+    elif choice == "2":
+        name = input("Namn på nytt register (utan .txt): ")
+        filename = name + ".txt"
+        open(filename, "w").close()   # Skapar en tom fil
+        print(f"Register '{filename}' skapat!")
+        return filename
+
+    else:
+        print("Ogiltigt val.")
+        return choose_register()
+
+
+def main():
+    # Skriver ut en välkomsttext när programmet startar
+    print("Välkommen till telefonregistret!")
+
+    # Låter användaren välja eller skapa ett register (fil)
+    file_name = choose_register()
+
+    # Läser in alla kontakter från den valda filen
+    contacts = read_contacts_from_file(file_name)
+
+    # Startar huvudloopen (menyn körs om och om igen tills användaren avslutar)
+    while True:
+        print("\n===== TELEFONREGISTER =====")
+        print(f"Aktiva registret: {file_name}")  # Visar vilket register som används
+        print("1. Visa alla kontakter")
+        print("2. Lägg till kontakt")
+        print("3. Uppdatera kontakt")
+        print("4. Ta bort kontakt")
+        print("5. Sök kontakt")
+        print("6. Byt register (B-nivå)")
+        print("7. Avsluta")
+
+        # Användaren väljer ett menyval
+        choice = input("Välj ett alternativ: ")
+
+        # Kör rätt funktion beroende på val
+        if choice == "1":
+            show_contacts(contacts)
+        elif choice == "2":
+            add_contact(contacts)
+        elif choice == "3":
+            update_contact(contacts)
+        elif choice == "4":
+            remove_contact(contacts)
+        elif choice == "5":
+            search_contact(contacts)
+        elif choice == "6":
+            # Sparar nuvarande register innan byte
+            write_contacts_to_file(contacts, file_name)
+
+            # Låter användaren välja ett nytt register
+            file_name = choose_register()
+
+            # Läser in kontakter från det nya registret
+            contacts = read_contacts_from_file(file_name)
+
+        elif choice == "7":
+            # Sparar innan programmet avslutas
+            write_contacts_to_file(contacts, file_name)
+            print("Programmet avslutas.")
+            break  # Avslutar loopen och programmet
+
+        else:
+            print("Ogiltigt val, försök igen.")
+
+
+if __name__ == "__main__":
+    main()
